@@ -10,12 +10,9 @@ from scipy import ndimage
 
 sam_checkpoint = "./notebooks/sam_vit_h_4b8939.pth"
 model_type = "vit_h"
-
 device = "cuda"
-
 sam = sam_model_registry[model_type](checkpoint=sam_checkpoint)
 sam.to(device=device)
-
 predictor = SamPredictor(sam)
 
 def show_mask(mask, ax, random_color=False):
@@ -39,15 +36,11 @@ def show_box(box, ax):
     ax.add_patch(plt.Rectangle((x0, y0), w, h, edgecolor='green', facecolor=(0,0,0,0), lw=2))  
 
 def scatter_points_proportional(image, baseline_density):
-
     points = []
     pixel_values = []
-
-
     num_zeros = np.sum(image == 0)
     num_ones = np.sum(image == 1)
     total_pixels = image.size
-    
     if num_zeros == 0:  # 避免除以0
         density_0 = 0.2
     else:
@@ -67,8 +60,7 @@ def scatter_points_proportional(image, baseline_density):
                 pixel_values.append(image[y, x])
             elif image[y, x] == 1 and y % spacing_255 == 0 and x % spacing_255 == 0:
                 points.append((x, y))
-                pixel_values.append(image[y, x])
-    
+                pixel_values.append(image[y, x])  
     return points, pixel_values
 
 def save_mask_only(mask, image_id, output_folder):
@@ -77,7 +69,6 @@ def save_mask_only(mask, image_id, output_folder):
     plt.axis('off')
     plt.savefig(os.path.join(output_folder, image_id + '.png'), bbox_inches='tight', pad_inches=0)
     plt.close()
-
 
 def save_mask_on_image(image, masks, points, pixel_values, image_id, output_folder):
     plt.figure(figsize=(10, 10))
@@ -105,27 +96,20 @@ def process_data(image_id):
         multimask_output=True,
     )
     mask_input = logits[np.argmax(scores), :, :]
-
-
     masks, _, _ = predictor.predict(
         point_coords=input_point,
         point_labels=input_label,
         mask_input=mask_input[None, :, :],
         multimask_output=False,
     )
-
-
     # Save images to respective folders
     save_mask_only(masks, image_id, './mask_only')
     save_mask_on_image(image, masks, input_point, input_label, image_id, './mask_on_image')
 
 
-
 image_extensions = ('.png', '.jpg', '.jpeg')
 input_folder = './Images'
 all_image_ids = [os.path.splitext(file_name)[0] for file_name in os.listdir(input_folder) if file_name.lower().endswith(image_extensions)]
-
-
 for image_id in all_image_ids:
     try:
         process_data(image_id)
